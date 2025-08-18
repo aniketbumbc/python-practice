@@ -1,6 +1,6 @@
 #classify children age group into child, adult, senior
 
-user_age = int(input("Give me a age value: "))
+# user_age = int(input("Give me a age value: "))
 
 def get_your_age_group(age):
     if (age < 13):
@@ -12,4 +12,15 @@ def get_your_age_group(age):
     else:
         print("Welcome to senior citizen group")
 
-get_your_age_group(user_age)
+# get_your_age_group(user_age)
+
+# movie price with age condition
+
+age =6
+day = "Wednesday"
+price = 12 if age>=18 else 8 
+
+if day == "Wednesday":
+    price = price - 2
+
+print("Ticket price for $:",price)
