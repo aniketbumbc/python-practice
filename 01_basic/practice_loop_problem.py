@@ -64,3 +64,13 @@ def first_non_repeat_char(str):
 
 # Factorial calculator
 
+def factorial_cal(num):
+    result = 1
+    while(num  > 0):
+        result = result * num
+        num = num - 1
+    
+    print(result)
+
+
+factorial_cal(12)
