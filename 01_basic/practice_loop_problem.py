@@ -73,4 +73,36 @@ def factorial_cal(num):
     print(result)
 
 
-factorial_cal(12)
+# factorial_cal(12)
+
+# check number is prime or not
+
+
+def isPrime(num):
+    isPrime_num = True
+    for i in range(2,num):
+        if(num % i == 0):
+            isPrime_num = False
+        break
+
+    print(isPrime_num)
+
+       
+
+
+# isPrime(11)
+
+# implement exponential backoff strategy that
+# doubles the wait between retries, starting from 1 sec but waits after 5 retries
+
+import time
+
+wait_time = 1
+max_retries = 5
+attempts = 0
+
+while attempts < max_retries:
+    print("Attempts", attempts + 1 , "wait time ",wait_time)
+    time.sleep(wait_time)
+    wait_time *= 2
+    attempts += 1
