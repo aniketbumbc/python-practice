@@ -23,6 +23,12 @@ cube = lambda x: x ** 3
 test = lambda : print("Hello Python welcome to lambda")
 addition = lambda x,y: x +y
 
-print(cube(3))
-test()
-print(addition(100,300))
+# print(cube(3))
+# test()
+# print(addition(100,300))
+
+def sum_all(*args):
+    return sum(args)
+
+print(sum_all(1,2))
+print(sum_all(1,2,4,5))
