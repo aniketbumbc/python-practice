@@ -40,14 +40,14 @@ def func1():
 result_func1 = func1()
 result_func1()
 
-def powercal(num):
+def power_cal(num):
     def actual(x):
         return x ** num
     return actual
 
 
-get_result = powercal(3);
-get_result2 = powercal(4);
+get_result = power_cal(3);
+get_result2 = power_cal(4);
 
 print(get_result(2))
 print(get_result2(3))
