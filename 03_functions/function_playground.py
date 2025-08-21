@@ -30,5 +30,30 @@ addition = lambda x,y: x +y
 def sum_all(*args):
     return sum(args)
 
-print(sum_all(1,2))
-print(sum_all(1,2,4,5))
+# print(sum_all(1,2))
+# print(sum_all(1,2,4,5))
+
+# generator function even generator 
+# The yield keyword turns the function into a generator.
+
+# Each time the generator is called (e.g. in a for loop), it resumes where it left off and returns the next value.
+
+# Unlike return, which ends the function, yield pauses the function's state.
+
+def generator(num):
+    for i in range(2, num + 1,2):
+        yield i
+    
+# for num in generator(10):
+#     print(num)
+
+# recursive function
+
+
+def recursive_factorial(num):
+    if(num==1):
+        return 1
+    return recursive_factorial(num-1) * (num)
+
+
+print(recursive_factorial(10))
