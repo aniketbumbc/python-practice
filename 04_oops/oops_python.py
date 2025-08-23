@@ -39,6 +39,9 @@ class ElectricCar(Car):
 
 # my_tesla = ElectricCar("Tesla", "Model s", "85Kwh")
 
+# print(isinstance(my_tesla,Car))
+# print(isinstance(my_tesla,ElectricCar))
+
 # print(my_tesla.model)
 # print(my_tesla.full_car())
 
@@ -47,12 +50,17 @@ class ElectricCar(Car):
 # print(my_tesla.__brand)
 # print(my_tesla.get_brand())
 
-my_car = Car("Maruti", "Swift")
-my_car_tata = Car("Tata", "Punch")
+# my_car = Car("Maruti", "Swift")
+# # my_car_tata = Car("Tata", "Punch")
 
-print(my_car.flue_type())
-print(Car.total_car)
-print(Car.general_description())
+# my_car.model = "Punch"
+
+# print(my_car.model)
+
+
+# print(my_car.flue_type())
+# print(Car.total_car)
+# print(Car.general_description())
 # print(my_car.brand)
 # print(my_car.model)
 # print(my_car.full_car())
@@ -68,3 +76,26 @@ print(Car.general_description())
 # Class variable create for total_car
 # polymorphism one method different form.
 # static method / decorator rule implementation and enhance functionality 
+
+
+
+
+class Battery:
+   def battery_info(self):
+       return "This is battery info"
+
+class Engine:
+     def engine_info(self):
+       return "This is engine info"
+
+
+class ElectricCarSec(Battery,Engine,Car):
+    pass
+
+
+my_new_tesla = ElectricCarSec("Tesla", "Model S3")
+
+
+print(my_new_tesla.battery_info())
+print(my_new_tesla.engine_info())
+print(my_new_tesla.full_car())
