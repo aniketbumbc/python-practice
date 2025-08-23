@@ -35,4 +35,34 @@ def greet_meet(name,city):
     print(f"Welcome {name} in the big city of India {city} ")
 
 
-greet_meet("Bunny", "Mumbai")
+# greet_meet("Bunny", "Mumbai")
+
+# cache result in function 
+
+
+def cache(func):
+    cache_value={}
+    print(cache_value)
+    def wrapper(*args):
+        if args in cache_value:
+            print("getting up cache")
+            return cache_value[args]
+        result = func(*args)
+        print("Setting up cache")
+        cache_value[args] = result
+        print("new cache",cache_value)
+        return result
+    return wrapper
+
+
+@cache
+def long_running_func(num1,num2):
+    time.sleep(4)
+    return num1 * num2
+
+
+print(long_running_func(3,4))
+print(long_running_func(3,4))
+print(long_running_func(5,10))
+print(long_running_func(6,20))
+print(long_running_func(3,4))
