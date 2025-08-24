@@ -1,1 +1,1 @@
-Welcome to project file
+[{"name": "how to play game", "time": "30"}]
