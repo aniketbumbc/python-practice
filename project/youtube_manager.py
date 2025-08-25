@@ -17,12 +17,12 @@ def save_data_helper(videos):
 
 
 def list_all_videos(videos):
-       print("\n")
-       print("*" * 90)
-       for index, video in enumerate(videos,start=1):
-        print(f"{index}. and {video['name']}, Duration:{video['time']}")
+    print("\n")
+    print("*" * 90)
+    for index, video in enumerate(videos,start=1):
+        print(f"{index}. {video['name']}, Duration:{video['time']}")
 
-       print("*" * 90)
+    print("*" * 90)
 
 def add_video(videos):
     name = input("Enter video name: ")
@@ -31,10 +31,26 @@ def add_video(videos):
     save_data_helper(videos)
 
 def update_video(videos):
-    pass
+    list_all_videos(videos)
+    index = int(input("Please enter video number to update "))
+    if 1<=index<=len(videos):
+        name = input("Enter new video name ")
+        time = input("Enter new video time ")
+        videos[index - 1] = {'name':name, 'time':time}
+        save_data_helper(videos)
+    else:
+        print("Invalid index selected")
+
 
 def delete_video(videos):
-    pass
+    list_all_videos(videos)
+    index = int(input("Please enter video number to deleted "))
+
+    if 1<=index<=len(videos):
+        del videos[index - 1]
+        save_data_helper(videos)
+    else:
+        print("Invalid index selected")
 
 
 def main():
@@ -46,7 +62,8 @@ def main():
         print("2. Add a youtube video")
         print("3. update video details")
         print("4. delete a youtube video")
-        choice = input("Enter your choice ")
+        print("5. exit video app")
+        choice = input("Enter your choice: ")
 
         match choice:
             case '1':
