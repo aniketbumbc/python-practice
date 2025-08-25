@@ -4,7 +4,6 @@ def load_data():
     try:
         with open('youtube.txt', 'r') as file:
             data = json.load(file)
-            print(data)
             return data
     except FileNotFoundError:
         return []
@@ -18,8 +17,12 @@ def save_data_helper(videos):
 
 
 def list_all_videos(videos):
-    for index, video in enumerate(videos,start=1):
-        print(f" index {index}")
+       print("\n")
+       print("*" * 90)
+       for index, video in enumerate(videos,start=1):
+        print(f"{index}. and {video['name']}, Duration:{video['time']}")
+
+       print("*" * 90)
 
 def add_video(videos):
     name = input("Enter video name: ")
@@ -38,13 +41,12 @@ def main():
     videos = load_data()
 
     while True:
-        print("Welcome to Youtube Manager | choice one option")
+        print("Welcome to Youtube Manager | choice one option ")
         print("1. List the favorite videos")
         print("2. Add a youtube video")
         print("3. update video details")
         print("4. delete a youtube video")
-        choice = input("Enter your choice")
-        print(videos)
+        choice = input("Enter your choice ")
 
         match choice:
             case '1':
