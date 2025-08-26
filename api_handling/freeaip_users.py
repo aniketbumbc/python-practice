@@ -17,7 +17,7 @@ def fetch_random_user():
         
 
 
-#users = data.get("data", {}).get("data", [])
+# users = data.get("data", {}).get("data", [])
 # for user in users:
 #     name = user.get("name", {})
 #     title = name.get("title", "")
@@ -26,6 +26,12 @@ def fetch_random_user():
 #     print(f"{title}. {first} {last}")
 
 
+def main():
+    try:
+        fetch_random_user()
+    except Exception as e:
+        print(e)
 
 
-fetch_random_user()
+
+main()
