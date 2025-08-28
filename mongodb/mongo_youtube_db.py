@@ -1,5 +1,7 @@
 from pymongo import MongoClient
 from dotenv import load_dotenv
+from bson import ObjectId
+
 import os
 
 load_dotenv()
@@ -14,6 +16,7 @@ video_collection = db["youtubeVideos"]
 
 def list_all_videos():
      print('***************************************')
+     
      for video in video_collection.find():
           print(f"Id: {video['_id']}, Name: {video['name']},Time: {video['time']}")
 
@@ -24,10 +27,11 @@ def add_video(name,time):
       video_collection.insert_one({"name":name, "time":time})
 
 def update_video(id,name,time):
-     pass
+     
+     video_collection.update_one({'_id': ObjectId(id)},{"$set":{"name":name,"time":time}})
 
 def delete_video(id):
-     pass
+      video_collection.delete_one({'_id': ObjectId(id)})
 
 
 def main():
