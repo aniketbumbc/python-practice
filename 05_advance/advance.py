@@ -14,22 +14,22 @@ og_list_new = list_new_letters[::-1] # reverse list
 # print(list_numbers)
 # print(list_letters)
 # print(list_new_letters)
-print("before",og_list_new)
+# print("before",og_list_new)
 
 # add and remove items
 
 og_list_new.append("J")
 og_list_new.insert(3,"fff")
 
-print("after",og_list_new)
+# print("after",og_list_new)
 
 og_list_new.pop()
 
-print("after pop",og_list_new)
+# print("after pop",og_list_new)
 
 og_list_new.remove('fff')
 
-print(og_list_new)
+# print(og_list_new)
 
 # delete range of items
 
@@ -39,8 +39,10 @@ print(og_list_new)
 
 # find item list 
 
-if 'a' in og_list_new:
-    print(og_list_new.index('a'))
+# if 'a' in og_list_new:
+#     print(og_list_new.index('a'))
 
- # count item
-print(og_list_new.count('d'))   
+#  # count item
+# print(og_list_new.count('d'))   
+
+print(list_numbers)
