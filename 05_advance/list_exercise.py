@@ -50,3 +50,25 @@ def removed_even(numList):
 
 
 removed_even(num_demo)
+
+# list comprehension
+
+fruits = ["apple", "banana", "cherry", "kiwi", "mango"]
+
+new_fruit_list = [ "hi "+ ele for ele in fruits if "a" in ele]
+# print(new_fruit_list)
+
+range_list = [y for y in range(10,20) if y > 15]
+# print(range_list)
+
+
+double_num_list = [num*2 for num in number_list]
+# print(double_num_list)
+
+# find vowel in list 
+
+word = "Pythoni"
+vowels = "aeiou"
+
+result_vowel = [char for char in word if char in vowels]
+print(result_vowel)
