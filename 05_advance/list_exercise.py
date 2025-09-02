@@ -72,3 +72,20 @@ vowels = "aeiou"
 
 result_vowel = [char for char in word if char in vowels]
 print(result_vowel)
+
+# Given a list of numbers, find the sum of all even numbers
+
+numbers_list_cal = [16, 13, 24, 53, 67, 70]
+
+
+def sum_even(numList):
+    result = 0
+    for num in numList:
+        if (num % 2 == 0):
+            result = result + num
+
+        
+    print(result)
+
+
+sum_even(numbers_list_cal)
