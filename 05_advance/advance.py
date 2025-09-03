@@ -6,7 +6,7 @@ list_letters = [chr(i) for i in range(ord('B'), ord('L'))]
 list_new_letters = list('abcdefghi')
 
 # for i,letter in enumerate(letters):
-#     print(f"Then index is {i} and value {letter}")
+# print(f"Then index is {i} and value {letter}")
 
 
 og_list_new = list_new_letters[::-1] # reverse list 

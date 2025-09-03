@@ -77,7 +77,6 @@ print(result_vowel)
 
 numbers_list_cal = [16, 13, 24, 53, 67, 70]
 
-
 def sum_even(numList):
     result = 0
     for num in numList:
