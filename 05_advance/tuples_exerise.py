@@ -29,3 +29,6 @@ def isListPalindrome(dummyList):
 
 isListPalindrome(list_one)
 isListPalindrome(["a","v","f"])
+
+for index,value in enumerate(demo_tuple):
+    print((index,value))
