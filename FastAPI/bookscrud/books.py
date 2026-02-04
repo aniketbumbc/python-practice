@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,Body
 
 app = FastAPI()
 
@@ -53,3 +53,28 @@ async def read_author_category(author:str, category:str):
         return {'message': 'Not Found'}
     
     return books_found
+
+
+#  Post Request Book
+@app.post("/book/create_book")
+async def createBook(new_book=Body(default=BOOKS[0])):
+    BOOKS.append(new_book)
+    return new_book
+
+# Put Request
+@app.put("/book/update_book")
+async def updateBook(update_book=Body(BOOKS[0])):
+    for i in range(len(BOOKS)):
+        if BOOKS[i].get('title').casefold() == update_book.get('title'):
+            BOOKS[i] = update_book
+
+            return BOOKS
+
+# Delete Request
+@app.delete("/book/{id}")
+async def deleteBook(id:int):
+    print(id)
+    for i,ele in enumerate(BOOKS):
+        if ele["id"] == id:
+            BOOKS.pop(i)
+            return BOOKS
