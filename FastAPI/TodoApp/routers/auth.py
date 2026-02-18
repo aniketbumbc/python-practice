@@ -16,7 +16,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 router = APIRouter(
     prefix="/auth",
-    tags=["auth"],
+    tags=["auth"]
 )
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto") # to hash and verify passwords create tokens for authentication
@@ -37,6 +37,11 @@ class CreateUserRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class User(BaseModel):
+    id: int
+    username: str
+
 
 
 
@@ -70,7 +75,7 @@ def create_access_token(username: str, user_id: int, expires_delta: timedelta):
 
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-async def get_current_user(token: str = Depends(oauth2_bearer)):
+async def get_current_user(token: str = Depends(oauth2_bearer)) -> User:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")

@@ -4,6 +4,11 @@ import models
 from sqlalchemy.orm import Session
 from typing import Annotated
 from pydantic import BaseModel, Field
+from routers.auth import get_current_user
+
+
+
+
 #from routers import auth
 # app = FastAPI()
 
@@ -20,6 +25,10 @@ def get_db():
     finally:
         db.close()
 
+       
+
+# user_dependency = Annotated[dict, Depends(get_current_user)]
+
 
 class TodoRequest(BaseModel):
     title: str = Field(min_length=3)
@@ -28,23 +37,32 @@ class TodoRequest(BaseModel):
     complete: bool = Field(default=False)
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
-async def read_all_todos(db: Session = Depends(get_db)):
-    todo_list = db.query(models.Todo).all()
+@router.get("/",  status_code=status.HTTP_200_OK)
+async def read_all_todos(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    todo_list = db.query(models.Todo).filter(models.Todo.owner_id == user.get("id")).all()
     return todo_list
 
 
 @router.get("/todo/{todo_id}", status_code=status.HTTP_200_OK)
-async def read_todo(todo_id: Annotated[int, Path(gt=0,default=None)], db: Session = Depends(get_db)):
-    todo_item = db.query(models.Todo).filter(models.Todo.id == todo_id).first()
+async def read_todo(todo_id: Annotated[int, Path(gt=0,default=None)], user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized user")
+
+    
+    todo_item = db.query(models.Todo).filter(models.Todo.id == todo_id).filter(models.Todo.owner_id == user.get("id")).first()
     if todo_item is None:
         raise HTTPException(status_code=404, detail="Todo not found")
     return todo_item
 
 
 @router.post("/todo", status_code=status.HTTP_201_CREATED)
-async def create_todo(todo_request: TodoRequest, db: Session = Depends(get_db)):
-    new_todo = models.Todo(**todo_request.dict())
+async def create_todo(todo_request: TodoRequest,user: dict = Depends(get_current_user),  db: Session = Depends(get_db)) -> models.Todo:
+
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized user")
+
+    new_todo = models.Todo(**todo_request.dict(),owner_id=user.get("id"))
     db.add(new_todo)
     db.commit()
     db.refresh(new_todo)
