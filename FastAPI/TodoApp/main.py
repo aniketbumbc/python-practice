@@ -4,13 +4,15 @@ import models
 from sqlalchemy.orm import Session
 from typing import Annotated
 from pydantic import BaseModel, Field
-from routers import auth, todos
+from routers import auth, todos,admin,user
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
 
 app.include_router(auth.router) ## include the auth router in the main app which is imported from the routers folder and access auth api from the main app
 app.include_router(todos.router) ## include the todos router in the main app which is imported from the routers folder and access todos api from the main app
+app.include_router(admin.router) ## include the admin router in the main app which is imported from the routers folder and access admin api from the main app
+app.include_router(user.router) ## include the user router in the main app which is imported from the routers folder and access user api from the main app
 # def get_db():
 #     db = SessionLocal() 
 #     try:
