@@ -58,28 +58,35 @@ def get_product(id:int,db: Session = Depends(get_db)):
 
     return "No Product Found"
 
+# Need to fixed post issue
 @app.post("/product")
-def add_product(product:Product):
-    product_list.append(product)
-    return product_list
+def add_product(product:Product,db: Session = Depends(get_db)):
+    db.add(database_models.Product(**product.model_dump()))
+    #db.add(database_models.Product(**product.dict()))
+    db.commit()
+   
+    return {
+        "message": "Product added successfully",
+        "product": product
+    }
 
 
 @app.put("/product/{id}")
-def update_product(id:int, product:Product):
-    for i in range(len(product_list)):
-        if product_list[i].id == id:
-            print("product",product)
-            product_list[i] = product
-            return product_list[i]
-        
-    return "Product Not Found"
+def update_product(id:int, product:Product,db: Session = Depends(get_db)):
+    db_product = db.query(database_models.Product).filter(database_models.Product.id == id).first()
+    if db_product:
+        db_product.name = product.name
+        db_product.description = product.description
+        db_product.price = product.price
+        db_product.quantity = product.quantity
+        db.commit()
+        return "Product Updated Successfully"
 
 
 @app.delete("/product/{id}")
-def update_product(id:int):
-    for i in range(len(product_list)):
-        if product_list[i].id == id:
-            product_list.remove(product_list[i])
-            return product_list
-        
-    return "Product Not Found"
+def update_product(id:int,db: Session = Depends(get_db)):
+    db_product = db.query(database_models.Product).filter(database_models.Product.id == id).first()
+    if db_product:
+        db.delete(db_product)
+        db.commit()
+    return "Product delete successfully"
