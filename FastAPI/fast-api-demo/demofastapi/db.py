@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-load_dotenv()
+load_dotenv() # load env
 
 database_url = os.getenv("DATABASE_URL")
 if not database_url:
