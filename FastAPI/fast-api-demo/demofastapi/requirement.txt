@@ -5,4 +5,8 @@ psycopg
 asyncpg
 python-dotenv
 psycopg2-binary
+passlib[argon2]
+python-jose[cryptography]
+python-multipart
+pydantic[email]
 
