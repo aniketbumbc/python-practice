@@ -93,12 +93,12 @@ def get_current_user(token:str = Depends(oauth2_scheme)):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    return {username, role}
+    return {"username":username, "role":role}
 
 
 @app.get("/protected")
 def protected_route(current_user:dict = Depends(get_current_user)):
-    return {"Message": f"Welcome to user {current_user} and access protected route"}
+    return {"Message": f"Welcome to user {current_user['username']} and access protected route"}
 
 
 def require_roles(allowed_roles:list[str]):
@@ -111,3 +111,26 @@ def require_roles(allowed_roles:list[str]):
     
     return role_checker
         
+
+
+@app.get("/profile")
+def get_user_profile(current_user:dict = Depends(require_roles(["admin"]))):
+    return{"message": f"Profile of {current_user['username']}"}
+
+
+@app.get("/user/dashboard")
+def user_dashboard(current_user:dict = Depends(require_roles(["user"]))):
+    return {"Message": "Welcome user"}
+
+@app.get("/admin/dashboard")
+def user_dashboard(current_user:dict = Depends(require_roles(["admin"]))):
+    return {"Message": "Welcome Admin"}
+
+
+@app.get("/admin/users", response_model=list[auth_schema.UserResponse])
+def get_all_users(
+    current_user: dict = Depends(require_roles(["admin"])),
+    db: Session = Depends(get_db),
+):
+    users = db.query(auth_models.User).all()
+    return users
