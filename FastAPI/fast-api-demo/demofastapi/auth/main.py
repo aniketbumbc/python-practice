@@ -7,7 +7,8 @@ import os
 from dotenv import load_dotenv
 from jose import jwt
 from datetime import datetime, timedelta
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from jose import JWTError
 
 
 load_dotenv() # load env
@@ -77,5 +78,36 @@ def login(form_data:OAuth2PasswordRequestForm = Depends(),db: Session = Depends(
     return{"access_token":token, "token_type": "bearer"}
 
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+def get_current_user(token:str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, secret_key, algorithms=[algorithm_jwt])
+        username: str = payload.get("sub")
+        role: str = payload.get("role")
+        if username is None or role is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    return {username, role}
 
 
+@app.get("/protected")
+def protected_route(current_user:dict = Depends(get_current_user)):
+    return {"Message": f"Welcome to user {current_user} and access protected route"}
+
+
+def require_roles(allowed_roles:list[str]):
+    def role_checker(current_user:dict = Depends(get_current_user)):
+        user_role =  current_user.get("role")
+        if user_role not in allowed_roles:
+            raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail="Not enough permission")
+        
+        return current_user
+    
+    return role_checker
+        
