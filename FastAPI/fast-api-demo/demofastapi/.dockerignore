@@ -1,0 +1,42 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv
+.venv
+env
+bin
+lib
+include
+pyvenv.cfg
+
+# Environment & secrets
+.env
+*.env
+
+# Git
+.git
+.gitignore
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing & coverage
+.pytest_cache
+.coverage
+htmlcov
+
+# Logs
+*.log

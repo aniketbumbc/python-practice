@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-import auth_models, auth_schema,utils
+from auth import auth_models, auth_schema,utils
 from fastapi import FastAPI,Depends,HTTPException,status
-from auth_db import get_db
+from .auth_db import get_db
 import os
 from dotenv import load_dotenv
 from jose import jwt
