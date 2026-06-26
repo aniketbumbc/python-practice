@@ -4,7 +4,7 @@ from fastapi import FastAPI,Request,HTTPException,status,Depends
 from fastapi.responses import HTMLResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from schemas import PostCreate, PostResponse
+from schemas import PostCreate, PostResponse, PostUpdate
 from sqlalchemy import select
 import models
 from database import Base, engine,get_db
@@ -98,3 +98,45 @@ def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
     
     return post
 
+  # add this import
+
+@router.patch("/{post_id}", response_model=PostResponse, status_code=status.HTTP_200_OK)
+def update_post(
+    post_id: int,
+    post_update: PostUpdate,
+    db: Annotated[Session, Depends(get_db)]
+):
+    post = db.get(models.Post, post_id)
+    
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id {post_id} not found"
+        )
+    
+    # Only update fields that were provided (exclude_unset=True)
+    update_data = post_update.model_dump(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        setattr(post, field, value)
+    
+    db.commit()
+    db.refresh(post)
+    
+    return post
+
+
+@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
+    post = db.get(models.Post, post_id)
+    
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id {post_id} not found"
+        )
+    
+    db.delete(post)
+    db.commit()
+    
+    return None  # 204 returns no body

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict,EmailStr, Field
 from datetime import datetime
+from typing import Optional
 
 class UserBase(BaseModel):
     username:str = Field(min_length=1, max_length=50)
@@ -37,3 +38,14 @@ class PostResponse(PostBase):
     user_id: int
     date_posted: datetime
     author: UserResponse
+
+
+class PostUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=3)
+    content: Optional[str] = Field(None, min_length=10)
+    topic: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    image_file: Optional[str] = None
