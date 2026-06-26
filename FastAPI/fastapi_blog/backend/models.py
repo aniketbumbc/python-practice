@@ -36,7 +36,7 @@ class Post(Base):
     topic:Mapped[str] = mapped_column(String, nullable=False)
     content:Mapped[str] = mapped_column(String, nullable=False)
     user_id:Mapped[int] = mapped_column(
-        ForeignKey("user.id"),
+        ForeignKey("users.id"),
         nullable=False,
         index=True,
     )
@@ -45,5 +45,5 @@ class Post(Base):
         default=lambda: datetime.now(UTC),
     )
 
-    author: Mapped[User] = relationship(back_populates="[posts]")
+    author: Mapped[User] = relationship(back_populates="posts")
 
