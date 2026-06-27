@@ -1,3 +1,10 @@
+from contextlib import asynccontextmanager
+from fastapi.exception_handlers import(http_exception_handler,request_validation_exception_handler)
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+
+
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -8,7 +15,16 @@ from routers import users, posts
 import models  # noqa: F401 - needed for Base.metadata.create_all to detect models
 
 # Create tables
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(_app:FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    await engine.driver()
+
+
 
 app = FastAPI(
     title="Blog API",

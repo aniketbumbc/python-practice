@@ -24,7 +24,7 @@ class User (Base):
         if self.image_file:
             return f"/media/profile_pics/{self.image_file}"
         
-        return "/media/profile_pics/default.jpg"
+        return "/media/profile_pics/image-update.png"
     
 
 
