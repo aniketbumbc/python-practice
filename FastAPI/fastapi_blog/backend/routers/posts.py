@@ -15,8 +15,7 @@ router = APIRouter(
     tags=["Posts"]
 )
 
-# get list of all based on userID
-
+# GET /api/posts/{user_id}/posts — returns all posts belonging to a specific user
 @router.get("/{user_id}/posts", response_model=List[PostResponse], status_code=status.HTTP_200_OK)
 def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
     # Check user exists first
@@ -40,6 +39,7 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
 
 
 
+# GET /api/posts/ — returns all posts from all users
 @router.get("/", response_model=list[PostResponse], name="posts")
 def home(db: Annotated[Session, Depends(get_db)]):
     result = db.execute(select(models.Post))
@@ -47,6 +47,7 @@ def home(db: Annotated[Session, Depends(get_db)]):
     return posts
 
 
+# GET /api/posts/{post_id} — returns a single post by its ID
 @router.get("/{post_id}", response_model=PostResponse, status_code=status.HTTP_200_OK)
 def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
     post = db.execute(
@@ -62,6 +63,7 @@ def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
     return post
 
 
+# POST /api/posts/ — creates a new post for a given user_id
 @router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 def create_post(post: PostCreate, db: Annotated[Session, Depends(get_db)]):
     # Verify user exists
@@ -86,6 +88,7 @@ def create_post(post: PostCreate, db: Annotated[Session, Depends(get_db)]):
     
     return new_post
 
+# GET /api/posts/{post_id} — returns a single post by its ID (duplicate route, uses db.get shorthand)
 @router.get("/{post_id}", response_model=PostResponse, status_code=status.HTTP_200_OK)
 def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
     post = db.get(models.Post, post_id)
@@ -98,8 +101,7 @@ def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
     
     return post
 
-  # add this import
-
+# PATCH /api/posts/{post_id} — partially updates a post's fields (only provided fields are changed)
 @router.patch("/{post_id}", response_model=PostResponse, status_code=status.HTTP_200_OK)
 def update_post(
     post_id: int,
@@ -114,11 +116,13 @@ def update_post(
             detail=f"Post with id {post_id} not found"
         )
     
+# Need to check Post validation with current user is only editing post or not
+    
     # Only update fields that were provided (exclude_unset=True)
     update_data = post_update.model_dump(exclude_unset=True)
     
     for field, value in update_data.items():
-        setattr(post, field, value)
+        setattr(post, field, value) # only change field value particular
     
     db.commit()
     db.refresh(post)
@@ -126,6 +130,7 @@ def update_post(
     return post
 
 
+# DELETE /api/posts/{post_id} — deletes a post by its ID, returns 204 with no body
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
     post = db.get(models.Post, post_id)
