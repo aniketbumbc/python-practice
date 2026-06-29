@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse
 from database import Base, engine
 from routers import users, posts
 import models  # noqa: F401 - needed for Base.metadata.create_all to detect models
+from database import init_db,check_db_connection
 
 # Create tables
 # Base.metadata.create_all(bind=engine)
@@ -31,6 +32,16 @@ app = FastAPI(
     description="A simple blog API with users and posts",
     version="1.0.0"
 )
+
+from database import init_db
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await check_db_connection()
+    await init_db()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 # Static files & templates
 app.mount("/media", StaticFiles(directory="media"), name="media")

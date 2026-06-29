@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from dotenv import load_dotenv
 import os
-import asyncio
+
+
 
 
 load_dotenv()
@@ -22,6 +23,11 @@ class Base(DeclarativeBase):
 async def get_db():
     async with AsyncSessionLocal() as db:
         yield db
+
+
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 async def check_db_connection():
     try:

@@ -8,14 +8,18 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    pass
+    password: str = Field(min_length=5)
 
-class UserResponse(UserBase):
+class UserPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True) #Pydantic to read data from ORM model attributes (like SQLAlchemy objects) instead of only from dicts.
 
-    id:int
+    id: int
+    username: str
     image_file: str | None
     image_path: str
+
+class UserPrivate(UserPublic):
+    email:EmailStr
 
 
 
@@ -37,7 +41,7 @@ class PostResponse(PostBase):
     id: int
     user_id: int
     date_posted: datetime
-    author: UserResponse
+    author: UserPublic
 
 
 class PostUpdate(BaseModel):
@@ -49,3 +53,9 @@ class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     image_file: Optional[str] = None
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+    
