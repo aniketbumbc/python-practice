@@ -52,7 +52,6 @@ class PostUpdate(BaseModel):
 class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
-    image_file: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile
 from schemas import UserCreate, UserPrivate, UserUpdate, UserPublic,Token
 from sqlalchemy import select,func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +9,9 @@ from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from auth import create_access_token,hash_password,verify_access_token, oauth2_scheme,verify_password,CurrentUser
 from config import settings
+from PIL import UnidentifiedImageError
+from starlette.concurrency import run_in_threadpool
+from image_util import delete_profile_image,process_profile_image
 
 router = APIRouter(
     prefix="/api/users",
@@ -153,8 +156,6 @@ async def update_user(
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(user_id: int, current_user:CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
-   
-
     if current_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -166,6 +167,98 @@ async def delete_user(user_id: int, current_user:CurrentUser, db: Annotated[Asyn
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with id {user_id} not found."
         )
+    
+    old_filename = user.image_file
 
     await db.delete(user)
     await db.commit()
+
+    if old_filename:
+        delete_profile_image(old_filename)
+
+
+
+@router.patch("/{user_id}/picture", response_model=UserPrivate)
+async def upload_profile_picture(user_id:int, file:UploadFile, current_user:CurrentUser,  db: Annotated[AsyncSession, Depends(get_db)]):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized to update this user's picture."
+        )
+
+    user = await db.get(models.User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found."
+        )
+
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file must be an image."
+        )
+
+    content = await file.read()
+
+    if len(content) > settings.max_upload_size_byt:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of {settings.max_upload_size_byt // (1024*1024)} MB."
+        )
+
+    try:
+        new_filename = await run_in_threadpool(process_profile_image, content)
+    except UnidentifiedImageError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not process image. Ensure the file is a valid image."
+        )
+
+  
+    old_filename = current_user.image_file
+
+    user.image_file = new_filename
+    await db.commit()
+    await db.refresh(user)
+
+    if old_filename:
+        delete_profile_image(old_filename)
+
+    return user
+
+
+
+
+@router.delete("/{user_id}/picture", response_model=UserPrivate)
+async def delete_user_picture(user_id: int, current_user: CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized to delete this user's picture."
+        )
+
+    user = await db.get(models.User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found."
+        )
+
+    if not user.image_file:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User has no profile picture to delete."
+        )
+
+    old_filename = user.image_file
+    user.image_file = None
+    await db.commit()
+    await db.refresh(user)
+
+    delete_profile_image(old_filename)
+
+    return user
+
+
+
