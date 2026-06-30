@@ -6,8 +6,7 @@ import models
 from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from datetime import timedelta
-from fastapi.security import OAuth2PasswordRequestForm
+from auth import CurrentUser
 
 router = APIRouter(
     prefix="/api/posts",
@@ -62,20 +61,13 @@ async def get_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
 
 # POST /api/posts/ — creates a new post for a given user_id
 @router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
-async def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_db)]):
-    user = await db.get(models.User, post.user_id)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {post.user_id} not found"
-        )
+async def create_post(post: PostCreate,current_user:CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
 
     new_post = models.Post(
         title=post.title,
         content=post.content,
         topic=post.topic,
-        user_id=post.user_id
+        user_id=current_user.id
     )
 
     db.add(new_post)
@@ -89,6 +81,7 @@ async def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_
 @router.patch("/{post_id}", response_model=PostResponse, status_code=status.HTTP_200_OK)
 async def update_post(
     post_id: int,
+    current_user:CurrentUser,
     post_update: PostUpdate,
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
@@ -98,6 +91,12 @@ async def update_post(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id {post_id} not found"
+        )
+    
+    if post.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Not authorized to update this post"
         )
 
     update_data = post_update.model_dump(exclude_unset=True)
@@ -113,13 +112,18 @@ async def update_post(
 
 # DELETE /api/posts/{post_id} — deletes a post by its ID, returns 204 with no body
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+async def delete_post(post_id: int, current_user:CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
     post = await db.get(models.Post, post_id)
 
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id {post_id} not found"
+        )
+    if post.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Not authorized to delete this post"
         )
 
     await db.delete(post)

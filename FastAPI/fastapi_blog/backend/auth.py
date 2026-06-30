@@ -3,6 +3,13 @@ import jwt
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from config import settings
+from typing import Annotated
+from fastapi import Depends,HTTPException,status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+import models
+from config import settings
+from database import get_db
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -16,7 +23,6 @@ def verify_password(plain_pass:str, hash_pass:str) -> bool:
 
 
 def create_access_token(data:dict, expires_delta:timedelta | None)-> str:
-
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
@@ -39,5 +45,27 @@ def verify_access_token(token:str) -> str | None:
     except jwt.InvalidTokenError:
         return None
     else:
-        return payload.get("sub")
+        return payload
 
+
+async def get_current_user(token:Annotated[str,Depends(oauth2_scheme)], db:Annotated[AsyncSession,Depends(get_db)]) -> models.User:
+    payload = verify_access_token(token)
+    userName = payload.get('sub')
+    userId = payload.get('id')
+    if not userName or not userId:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user = await db.get(models.User, int(userId))  # faster, uses primary key lookup
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+CurrentUser = Annotated[models.User, Depends(get_current_user)]

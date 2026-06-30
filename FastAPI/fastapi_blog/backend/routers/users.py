@@ -7,7 +7,7 @@ import models
 from database import get_db
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
-from auth import create_access_token,hash_password,verify_access_token, oauth2_scheme,verify_password
+from auth import create_access_token,hash_password,verify_access_token, oauth2_scheme,verify_password,CurrentUser
 from config import settings
 
 router = APIRouter(
@@ -65,36 +65,14 @@ async def login_for_access_token(
         )
 
     access_token = create_access_token(
-        data={"sub": user.username},
+        data={"sub": user.username, "id": str(user.id)},
         expires_delta=timedelta(minutes=settings.access_token_mins)
     )
     return Token(access_token=access_token, token_type="bearer")
 
 
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(get_db)]
-) -> models.User:
-    userName = verify_access_token(token)
-    if not userName:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    result = await db.execute(select(models.User).where(models.User.username == userName))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
-
-
 @router.get("/me", response_model=UserPrivate)
-async def get_me(current_user: Annotated[models.User, Depends(get_current_user)]):
+async def get_me(current_user:CurrentUser):
     return current_user
 
 @router.get("/", response_model=List[UserPublic], status_code=status.HTTP_200_OK)
@@ -121,10 +99,18 @@ async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
 async def update_user(
     user_id: int,
     user_update: UserUpdate,
+    current_user:CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
-    user = await db.get(models.User, user_id)
+  
 
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Unauthorized to update user."
+        )
+
+    user = await db.get(models.User, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -140,7 +126,7 @@ async def update_user(
         if result.scalar_one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already taken"
+                detail="Username already taken."
             )
 
     if "email" in update_data and update_data["email"].lower() != user.email.lower():
@@ -150,7 +136,7 @@ async def update_user(
         if result.scalar_one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
+                detail="Email already registered."
             )
 
     for field, value in update_data.items():
@@ -166,13 +152,19 @@ async def update_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    user = await db.get(models.User, user_id)
+async def delete_user(user_id: int, current_user:CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
+   
 
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Unauthorized to delete user."
+        )
+    user = await db.get(models.User, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found"
+            detail=f"User with id {user_id} not found."
         )
 
     await db.delete(user)

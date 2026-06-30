@@ -31,7 +31,7 @@ class PostBase(BaseModel):
 
 
 class PostCreate(PostBase):
-    user_id: int #temporary
+    pass
 
 
 
