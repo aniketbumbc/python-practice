@@ -13,6 +13,16 @@ class Settings(BaseSettings):
     access_token_mins: int = 20
 
     max_upload_size_byt:int = 5* 1024 * 1024
+    reset_token_expire_minutes: int = 10
+
+    mail_server:str = "localhost"
+    mail_port: int = 587
+    mail_username: str = ""
+    mail_password: SecretStr = SecretStr("")
+    mail_from:str = "noreplay@gmail.com"
+    mail_use_tls:bool = True
+
+    frontend_url:str = "http://localhost:8000"
 
 settings = Settings()
 
