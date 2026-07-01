@@ -1,7 +1,7 @@
 from typing import Annotated, List
-from fastapi import APIRouter, HTTPException, status, Depends
-from schemas import PostCreate, PostResponse, PostUpdate
-from sqlalchemy import select
+from fastapi import APIRouter, HTTPException, status, Depends,Query
+from schemas import PostCreate, PostResponse, PostUpdate,PaginatedPostResponse
+from sqlalchemy import select,func
 import models
 from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,9 +13,14 @@ router = APIRouter(
     tags=["Posts"]
 )
 
-# GET /api/posts/{user_id}/posts — returns all posts belonging to a specific user
-@router.get("/{user_id}/posts", response_model=List[PostResponse], status_code=status.HTTP_200_OK)
-async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+# GET /api/posts/{user_id}/posts — returns paginated posts belonging to a specific user
+@router.get("/{user_id}/posts", response_model=PaginatedPostResponse, status_code=status.HTTP_200_OK)
+async def get_user_posts(
+    user_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+):
     result = await db.execute(
         select(models.User).where(models.User.id == user_id)
     )
@@ -27,22 +32,42 @@ async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_d
             detail=f"User with id {user_id} not found"
         )
 
+    count_result = await db.execute(
+        select(func.count()).select_from(models.Post).where(models.Post.user_id == user_id)
+    )
+    total = count_result.scalar() or 0
+
     result = await db.execute(
-        select(models.Post).where(models.Post.user_id == user_id)
+        select(models.Post)
+        .options(selectinload(models.Post.author))
+        .where(models.Post.user_id == user_id)
+        .order_by(models.Post.date_posted.desc())
+        .offset(skip)
+        .limit(limit)
     )
     posts = result.scalars().all()
 
-    return posts
+    has_more = skip + len(posts) < total
+    return PaginatedPostResponse(
+        posts=[PostResponse.model_validate(post) for post in posts],
+        total=total,
+        skip=skip,
+        limit=limit,
+        has_more=has_more,
+    )
 
 
 # GET /api/posts/ — returns all posts from all users
-@router.get("/", response_model=List[PostResponse], name="posts")
-async def home(db: Annotated[AsyncSession, Depends(get_db)]):
+@router.get("/", response_model=PaginatedPostResponse, name="posts")
+async def home(db: Annotated[AsyncSession, Depends(get_db)], skip:Annotated[int,Query(ge=0)] = 0, limit: Annotated[int, Query(ge=1, le=100)] = 10):
+    count_result = await db.execute(select(func.count()).select_from(models.Post))
+    total = count_result.scalar () or 0
     result = await db.execute(
-        select(models.Post).options(selectinload(models.Post.author))
+        select(models.Post).options(selectinload(models.Post.author)).order_by(models.Post.date_posted.desc()).offset(skip).limit(limit)
     )
     posts = result.scalars().all()
-    return posts
+    has_more = skip +len(posts) < total
+    return PaginatedPostResponse(posts=[PostResponse.model_validate(post) for post in posts], total=total, skip=skip, limit=limit, has_more=has_more)
 
 
 # GET /api/posts/{post_id} — returns a single post by its ID

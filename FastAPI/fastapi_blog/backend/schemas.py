@@ -57,4 +57,10 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-    
+
+class PaginatedPostResponse(BaseModel):
+    posts: list[PostResponse]
+    total:int
+    skip:int
+    limit:int
+    has_more:bool
