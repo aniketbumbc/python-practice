@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import models
 from config import settings
 from database import get_db
+import hashlib
+import secrets
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -69,3 +71,9 @@ async def get_current_user(token:Annotated[str,Depends(oauth2_scheme)], db:Annot
     return user
 
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
+
+def generate_rest_token() ->str:
+    return secrets.token_urlsafe(32)
+
+def hash_reset_token(token:str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
