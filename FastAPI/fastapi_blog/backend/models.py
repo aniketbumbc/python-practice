@@ -17,6 +17,7 @@ class User (Base):
         nullable=True,
         default=None
     )
+    role:Mapped[str] = mapped_column(String(20), default="user",nullable=False)
 
     posts:Mapped[list[Post]] = relationship(back_populates="author", cascade="all, delete-orphan")
     resets_tokens:Mapped[list[PasswordRestToken]] = relationship(back_populates="user",cascade="all, delete-orphan")

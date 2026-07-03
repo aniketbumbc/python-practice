@@ -1,0 +1,8 @@
+1. Create database apply alembic migration with head. which is initial migration.
+2. Then change in model if add or drop column. Then again uv run alembic revision --autogenerate -m "add role to user"
+to generate migration script.
+3. Then uv run alembic upgrade head to apply new changes to DB.
+4. Roll back alembic downgrade - 1 ( Roll Back )
+5. uv run alembic current ( Check current status)
+6. uv run alembic history (Check history)
+7. On production on apply alembic upgrade head

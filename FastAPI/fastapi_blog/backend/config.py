@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     secret_key: SecretStr
     algorithm: str = "HS256"
     access_token_mins: int = 20
+    database_url: str
 
     max_upload_size_byt:int = 5* 1024 * 1024
     reset_token_expire_minutes: int = 10

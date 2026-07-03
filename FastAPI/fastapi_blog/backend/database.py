@@ -1,17 +1,14 @@
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
-from dotenv import load_dotenv
 import os
+from config import settings
 
 
 
-
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
+# DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(
-    DATABASE_URL,
+    settings.database_url,
     pool_pre_ping=True,
     pool_recycle=300,
 )
