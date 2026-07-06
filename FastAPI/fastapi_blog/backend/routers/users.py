@@ -11,9 +11,11 @@ from auth import create_access_token,hash_password,verify_access_token, oauth2_s
 from config import settings
 from PIL import UnidentifiedImageError
 from starlette.concurrency import run_in_threadpool
-from image_util import delete_profile_image,process_profile_image
+from image_util import process_profile_image
 from sqlalchemy import delete as sql_delete
 from email_utils import send_password_reset_email
+from storage.supabase_client import supabase
+import uuid
 
 router = APIRouter(
     prefix="/api/users",
@@ -176,12 +178,19 @@ async def delete_user(user_id: int, current_user:CurrentUser, db: Annotated[Asyn
     await db.commit()
 
     if old_filename:
-        delete_profile_image(old_filename)
-
+        try:
+            supabase.storage.from_(settings.supabase_bucket).remove([old_filename])
+        except Exception:
+            pass  # don't fail the request if old file cleanup fails
 
 
 @router.patch("/{user_id}/picture", response_model=UserPrivate)
-async def upload_profile_picture(user_id:int, file:UploadFile, current_user:CurrentUser,  db: Annotated[AsyncSession, Depends(get_db)]):
+async def upload_profile_picture(
+    user_id: int,
+    file: UploadFile,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
     if current_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -210,22 +219,39 @@ async def upload_profile_picture(user_id:int, file:UploadFile, current_user:Curr
         )
 
     try:
-        new_filename = await run_in_threadpool(process_profile_image, content)
+        processed_content = await run_in_threadpool(process_profile_image, content)
     except UnidentifiedImageError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not process image. Ensure the file is a valid image."
         )
 
-  
-    old_filename = current_user.image_file
+    # process_profile_image always re-encodes to JPEG
+    new_filename = f"{uuid.uuid4()}.jpg"
 
-    user.image_file = new_filename
+    try:
+        supabase.storage.from_(settings.supabase_bucket).upload(
+            new_filename,
+            processed_content,
+            file_options={"content-type": "image/jpeg"}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload image: {str(e)}"
+        )
+
+    old_filename = user.image_file  # old key, not full URL
+
+    user.image_file = new_filename  # store key, not URL, in DB
     await db.commit()
     await db.refresh(user)
 
     if old_filename:
-        delete_profile_image(old_filename)
+        try:
+            supabase.storage.from_(settings.supabase_bucket).remove([old_filename])
+        except Exception:
+            pass  # don't fail the request if old file cleanup fails
 
     return user
 
@@ -258,7 +284,10 @@ async def delete_user_picture(user_id: int, current_user: CurrentUser, db: Annot
     await db.commit()
     await db.refresh(user)
 
-    delete_profile_image(old_filename)
+    try:
+        supabase.storage.from_(settings.supabase_bucket).remove([old_filename])
+    except Exception:
+        pass  # don't fail the request if old file cleanup fails
 
     return user
 

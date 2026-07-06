@@ -16,4 +16,5 @@ dependencies = [
     "pyjwt>=2.13.0",
     "requests>=2.34.2",
     "sqlalchemy>=2.0.51",
+    "supabase>=2.31.0",
 ]

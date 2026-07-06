@@ -4,6 +4,8 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
+from config import settings
+from storage.supabase_client import supabase
 
 class User (Base):
     __tablename__ = "users"
@@ -25,9 +27,9 @@ class User (Base):
     @property
     def image_path(self)->str:
         if self.image_file:
-            return f"/media/profile_pics/{self.image_file}"
-        
-        return "/media/profile_pics/image-update.png"
+            return supabase.storage.from_(settings.supabase_bucket).get_public_url(self.image_file)
+
+        return "Image not found"
     
 
 
