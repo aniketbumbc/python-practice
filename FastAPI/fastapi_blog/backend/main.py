@@ -2,15 +2,12 @@ from contextlib import asynccontextmanager
 from fastapi.exception_handlers import(http_exception_handler,request_validation_exception_handler)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-
-
-
-from fastapi import FastAPI, Request
+from sqlalchemy import text
+from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-
-from database import Base, engine
+from database import Base, engine, get_db
 from routers import users, posts
 import models  # noqa: F401 - needed for Base.metadata.create_all to detect models
 from database import init_db,check_db_connection
@@ -55,3 +52,15 @@ app.include_router(posts.router)
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def home(request: Request):
     return templates.TemplateResponse(request, "home.html")
+
+
+@app.get("/health")
+async def health_check(db: AsyncSession = Depends(get_db)):
+    try:
+        await db.execute(text("SELECT 1"))
+        return {"status": "healthy"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Database unavailable: {e}",
+        )
