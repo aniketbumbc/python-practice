@@ -1,5 +1,5 @@
 from typing import Annotated, List
-from fastapi import APIRouter, HTTPException, status, Depends,Query
+from fastapi import APIRouter, HTTPException, status, Depends,Query, UploadFile
 from schemas import PostCreate, PostResponse, PostUpdate,PaginatedPostResponse
 from sqlalchemy import select,func
 import models
@@ -7,6 +7,12 @@ from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from auth import CurrentUser
+from config import settings
+from PIL import UnidentifiedImageError
+from starlette.concurrency import run_in_threadpool
+from image_util import process_blog_thumbnail
+from storage.supabase_client import supabase
+import uuid
 
 router = APIRouter(
     prefix="/api/posts",
@@ -151,7 +157,124 @@ async def delete_post(post_id: int, current_user:CurrentUser, db: Annotated[Asyn
             detail=f"Not authorized to delete this post"
         )
 
+    old_filename = post.blog_image_file
+
     await db.delete(post)
     await db.commit()
 
+    if old_filename:
+        try:
+            supabase.storage.from_(settings.supabase_bucket).remove([old_filename])
+        except Exception:
+            pass  # don't fail the request if old file cleanup fails
+
     return None
+
+
+# PATCH /api/posts/{post_id}/thumbnail — uploads/replaces a post's thumbnail image
+@router.patch("/{post_id}/thumbnail", response_model=PostResponse)
+async def upload_post_thumbnail(
+    post_id: int,
+    file: UploadFile,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
+    post = await db.get(models.Post, post_id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id {post_id} not found"
+        )
+
+    if post.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this post's thumbnail."
+        )
+
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file must be an image."
+        )
+
+    content = await file.read()
+
+    if len(content) > settings.max_upload_size_byt:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of {settings.max_upload_size_byt // (1024*1024)} MB."
+        )
+
+    try:
+        processed_content = await run_in_threadpool(process_blog_thumbnail, content)
+    except UnidentifiedImageError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not process image. Ensure the file is a valid image."
+        )
+
+    # process_blog_thumbnail always re-encodes to JPEG
+    new_filename = f"{uuid.uuid4()}.jpg"
+    path = f"blog/thumbnail/{new_filename}"
+
+    try:
+        supabase.storage.from_(settings.supabase_bucket).upload(
+            path,
+            processed_content,
+            file_options={"content-type": "image/jpeg"}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload image: {str(e)}"
+        )
+
+    old_filename = post.blog_image_file  # old key, not full URL
+
+    post.blog_image_file = path  # store full key (with folder prefix), not URL, in DB
+    await db.commit()
+    await db.refresh(post)
+
+    if old_filename:
+        try:
+            supabase.storage.from_(settings.supabase_bucket).remove([old_filename])
+        except Exception:
+            pass  # don't fail the request if old file cleanup fails
+
+    return post
+
+
+# DELETE /api/posts/{post_id}/thumbnail — removes a post's thumbnail image
+@router.delete("/{post_id}/thumbnail", response_model=PostResponse)
+async def delete_post_thumbnail(post_id: int, current_user: CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
+    post = await db.get(models.Post, post_id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id {post_id} not found"
+        )
+
+    if post.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this post's thumbnail."
+        )
+
+    if not post.blog_image_file:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post has no thumbnail to delete."
+        )
+
+    old_filename = post.blog_image_file
+    post.blog_image_file = None
+    await db.commit()
+    await db.refresh(post)
+
+    try:
+        supabase.storage.from_(settings.supabase_bucket).remove([old_filename])
+    except Exception:
+        pass  # don't fail the request if old file cleanup fails
+
+    return post

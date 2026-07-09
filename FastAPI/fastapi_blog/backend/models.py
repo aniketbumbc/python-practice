@@ -40,6 +40,11 @@ class Post(Base):
     title:Mapped[str] = mapped_column(String, nullable=False)
     topic:Mapped[str] = mapped_column(String, nullable=False)
     content:Mapped[str] = mapped_column(String, nullable=False)
+    blog_image_file: Mapped[str | None] = mapped_column(
+        String(200),
+        nullable=True,
+        default=None
+    )
     user_id:Mapped[int] = mapped_column(
         ForeignKey("users.id"),
         nullable=False,
@@ -51,6 +56,13 @@ class Post(Base):
     )
 
     author: Mapped[User] = relationship(back_populates="posts")
+
+    @property
+    def blog_image_path(self) -> str:
+        if self.blog_image_file:
+            return supabase.storage.from_(settings.supabase_bucket).get_public_url(self.blog_image_file)
+
+        return "Image not found"
 
 
 

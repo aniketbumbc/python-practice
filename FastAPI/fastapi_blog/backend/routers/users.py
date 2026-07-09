@@ -228,10 +228,12 @@ async def upload_profile_picture(
 
     # process_profile_image always re-encodes to JPEG
     new_filename = f"{uuid.uuid4()}.jpg"
+    path = f"profile_pics/{new_filename}"
+
 
     try:
         supabase.storage.from_(settings.supabase_bucket).upload(
-            new_filename,
+            path,
             processed_content,
             file_options={"content-type": "image/jpeg"}
         )
@@ -243,7 +245,7 @@ async def upload_profile_picture(
 
     old_filename = user.image_file  # old key, not full URL
 
-    user.image_file = new_filename  # store key, not URL, in DB
+    user.image_file = path  # store full key (with folder prefix), not URL, in DB
     await db.commit()
     await db.refresh(user)
 
