@@ -1,5 +1,5 @@
 "use client";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tag from "@/components/ui/Tag";
@@ -8,6 +8,7 @@ import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { useAuth } from "@/store/auth";
 import { useToast } from "@/store/toast";
+import { useBlogStore } from "@/store/blog";
 
 export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -15,16 +16,33 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const push = useToast((s) => s.push);
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
+  const { currentPost: post, postStatus, postError, fetchPost } = useBlogStore();
 
-  // TODO: fetch post by id; placeholder below
-  const post = {
-    id, title: "Designing a content-first reading experience",
-    topic: "Design", authorId: "me", author: { username: "Aniket", handle: "aniket", avatarUrl: undefined },
-    createdAt: new Date().toISOString(), readTime: 5,
-    content: "Long-form body goes here…",
-  };
+  useEffect(() => {
+    fetchPost(id);
+  }, [id, fetchPost]);
 
   const del = () => { setConfirm(false); push("Post deleted"); router.push("/"); };
+
+  if (postStatus === "loading" || postStatus === "idle") {
+    return (
+      <div className="max-w-[680px] mx-auto py-4 space-y-4 animate-pulse">
+        <div className="h-6 w-20 bg-divider rounded-full" />
+        <div className="h-10 w-full bg-divider rounded" />
+        <div className="h-6 w-2/3 bg-divider rounded" />
+      </div>
+    );
+  }
+
+  if (postStatus === "error" || !post) {
+    return (
+      <div className="max-w-[680px] mx-auto py-20 flex flex-col items-center text-center gap-3">
+        <div className="w-12 h-12 grid place-items-center rounded-xl text-xl bg-danger-bg text-danger">!</div>
+        <p className="text-lg font-semibold text-ink">{postError ?? "Couldn't load post"}</p>
+        <Button variant="secondary" onClick={() => fetchPost(id)}>↻ Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <article className="max-w-[680px] mx-auto py-4">
@@ -39,7 +57,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
             <p className="text-xs text-faint">{new Date(post.createdAt).toLocaleDateString()} · {post.readTime} min read</p>
           </div>
         </Link>
-        {isOwner(post.authorId) && (
+        {isOwner(post.author.id) && (
           <div className="flex gap-2">
             <Link href={`/posts/${id}/edit`}><Button variant="secondary">✎ Edit</Button></Link>
             <Button variant="danger" onClick={() => setConfirm(true)}>🗑 Delete</Button>
@@ -47,9 +65,13 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
         )}
       </div>
 
+      <div
+        className="mt-6 h-80 rounded-2xl overflow-hidden placeholder-stripes"
+        style={post.coverUrl ? { backgroundImage: `url(${post.coverUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+      />
+
       <div className="mt-8 font-serif text-[18px] leading-[1.75] text-text space-y-5">
         <p>{post.content}</p>
-        <blockquote className="border-l-[3px] border-primary pl-4 italic text-accent">A quote renders like this.</blockquote>
       </div>
 
       <Modal

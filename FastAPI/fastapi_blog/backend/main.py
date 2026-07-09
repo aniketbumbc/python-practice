@@ -11,26 +11,14 @@ from database import Base, engine, get_db
 from routers import users, posts
 import models  # noqa: F401 - needed for Base.metadata.create_all to detect models
 from database import init_db,check_db_connection
+from fastapi.middleware.cors import CORSMiddleware
+
+
+
+
 
 # Create tables
 # Base.metadata.create_all(bind=engine)
-
-@asynccontextmanager
-async def lifespan(_app:FastAPI):
-    # async with engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.create_all)
-    yield
-    await engine.driver()
-
-
-
-app = FastAPI(
-    title="Blog API",
-    description="A simple blog API with users and posts",
-    version="1.0.0"
-)
-
-from database import init_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,7 +26,20 @@ async def lifespan(app: FastAPI):
     await init_db()
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Blog API",
+    description="A simple blog API with users and posts",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Static files & templates
 app.mount("/media", StaticFiles(directory="media"), name="media")

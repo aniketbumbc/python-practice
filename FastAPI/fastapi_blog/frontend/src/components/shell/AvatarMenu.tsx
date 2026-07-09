@@ -26,8 +26,7 @@ export default function AvatarMenu({ user }: { user: User }) {
               <p className="text-sm font-semibold text-ink">{user.username}</p>
               <p className="text-xs text-subtle">@{user.handle}</p>
             </div>
-            <Link href={`/u/${user.handle}`} className="block px-3 py-2 text-sm rounded-md hover:bg-page" onClick={() => setOpen(false)}>Profile</Link>
-            <Link href="/settings" className="block px-3 py-2 text-sm rounded-md hover:bg-page" onClick={() => setOpen(false)}>Settings</Link>
+            <Link href="/settings" className="block px-3 py-2 text-sm rounded-md hover:bg-page" onClick={() => setOpen(false)}>Profile</Link>
             <button
               className="w-full text-left px-3 py-2 text-sm rounded-md text-danger hover:bg-danger-bg"
               onClick={() => { logout(); setOpen(false); push("Signed out"); router.push("/"); }}

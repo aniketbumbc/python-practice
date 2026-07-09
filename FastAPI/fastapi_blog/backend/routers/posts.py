@@ -13,6 +13,8 @@ from starlette.concurrency import run_in_threadpool
 from image_util import process_blog_thumbnail
 from storage.supabase_client import supabase
 import uuid
+from sqlalchemy.orm import selectinload
+
 
 router = APIRouter(
     prefix="/api/posts",
@@ -79,7 +81,11 @@ async def home(db: Annotated[AsyncSession, Depends(get_db)], skip:Annotated[int,
 # GET /api/posts/{post_id} — returns a single post by its ID
 @router.get("/{post_id}", response_model=PostResponse, status_code=status.HTTP_200_OK)
 async def get_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    post = await db.get(models.Post, post_id)
+    post = await db.get(
+        models.Post,
+        post_id,
+        options=[selectinload(models.Post.author)]
+    )
 
     if not post:
         raise HTTPException(

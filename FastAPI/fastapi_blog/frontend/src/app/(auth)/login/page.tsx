@@ -12,15 +12,18 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { signIn } = useAuth();
   const push = useToast((s) => s.push);
   const router = useRouter();
 
   const submit = async () => {
     setError(null);
-    // TODO: call backend
     if (!username || !password) return setError("Incorrect username or password.");
-    login({ id: "me", username, handle: username.toLowerCase(), email: "", postCount: 0 });
+    setLoading(true);
+    const result = await signIn(username, password);
+    setLoading(false);
+    if (!result.ok) return setError(result.error);
     push("Welcome back");
     router.push("/");
   };
@@ -36,7 +39,7 @@ export default function LoginPage() {
             label="Password" type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)}
             labelRight={<Link href="/forgot-password" className="text-xs text-accent">Forgot password?</Link>}
           />
-          <Button className="w-full" onClick={submit}>Log in</Button>
+          <Button className="w-full" onClick={submit} disabled={loading}>{loading ? "Logging in…" : "Log in"}</Button>
         </div>
         <p className="mt-4 text-sm text-muted text-center">No account? <Link href="/signup" className="text-accent">Sign up</Link></p>
       </Card>
