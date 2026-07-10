@@ -16,7 +16,7 @@ export default function FeedCard({ post }: { post: Post }) {
           <div className="mt-3 flex items-center gap-2">
             <Avatar src={post.author.avatarUrl} size={26} />
             <span className="text-sm text-text">{post.author.username}</span>
-            <span className="text-xs text-faint">· {new Date(post.createdAt).toLocaleDateString()}</span>
+            <span className="text-xs text-black">· {new Date(post.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
       </Card>
