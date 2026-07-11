@@ -56,6 +56,7 @@ export default function SettingsPage() {
     setUsername(currentUser.username);
     setEmail(currentUser.email);
     setProfileError(null);
+    router.push("/");
   };
 
   const saveProfile = async () => {
@@ -72,6 +73,14 @@ export default function SettingsPage() {
   const mismatch = confirmPw && newPw !== confirmPw ? "Passwords don't match." : null;
   const passwordValid = currentPw && newPw && !newPwErr && !mismatch;
 
+  const cancelPassword = () => {
+    setCurrentPw("");
+    setNewPw("");
+    setConfirmPw("");
+    setPasswordError(null);
+    router.push("/");
+  };
+
   const submitPassword = async () => {
     if (!passwordValid) return;
     setPasswordSaving(true);
@@ -81,6 +90,8 @@ export default function SettingsPage() {
     if (result.ok) {
       push("Password updated");
       setCurrentPw(""); setNewPw(""); setConfirmPw("");
+      logout();
+      router.push("/");
     } else {
       setPasswordError(result.error);
     }
@@ -126,7 +137,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
-          <Button variant="secondary" onClick={resetProfile} disabled={!dirty || profileSaving}>Cancel</Button>
+          <Button variant="secondary" onClick={resetProfile} disabled={profileSaving}>Cancel</Button>
           <Button onClick={saveProfile} disabled={!profileValid || !dirty || profileSaving}>
             {profileSaving ? "Saving…" : "Save profile"}
           </Button>
@@ -146,9 +157,11 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-6 flex justify-end">
+          <Button className="mr-2" variant="secondary" onClick={cancelPassword} disabled={passwordSaving}>Cancel</Button>
           <Button onClick={submitPassword} disabled={!passwordValid || passwordSaving}>
             {passwordSaving ? "Updating…" : "Update password"}
           </Button>
+          
         </div>
       </Card>
 

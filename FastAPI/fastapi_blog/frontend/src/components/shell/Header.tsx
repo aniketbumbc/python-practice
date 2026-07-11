@@ -1,11 +1,17 @@
 "use client";
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/store/auth";
+import { useBlogStore } from "@/store/blog";
 import Button from "@/components/ui/Button";
 import AvatarMenu from "./AvatarMenu";
 
 export default function Header() {
   const { currentUser } = useAuth();
+  const { searchQuery, setSearchQuery } = useBlogStore();
+  const router = useRouter();
+  const pathname = usePathname();
+
   return (
     <header className="h-16 border-b border-divider bg-surface">
       <div className="h-full max-w-[1120px] mx-auto px-5 flex items-center gap-4">
@@ -14,6 +20,11 @@ export default function Header() {
           <span className="font-serif font-bold text-lg text-ink">Blog API</span>
         </Link>
         <input
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            if (pathname !== "/") router.push("/");
+          }}
           placeholder="Search posts…"
           className="focus-ring ml-auto h-10 w-52 px-3 rounded-[9px] bg-page text-sm border border-border-strong placeholder:text-subtle"
         />

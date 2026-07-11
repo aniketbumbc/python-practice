@@ -9,7 +9,7 @@ import { useAuth } from "@/store/auth";
 const TOPICS = ["Yours", "All", "Engineering", "Design", "Product", "AI"];
 
 export default function HomePage() {
-  const { posts, status, hasMore, fetchPosts, loadMore } = useBlogStore();
+  const { posts, status, hasMore, fetchPosts, loadMore, searchQuery } = useBlogStore();
   const {currentUser} = useAuth()
   const [topic, setTopic] = useState(currentUser ? "Yours" : "All");
 
@@ -27,6 +27,16 @@ export default function HomePage() {
     visibleItems = posts.filter((p) => currentUser?.id === p.author.id);
   } else {
     visibleItems = posts.filter((p) => p.topic === effectiveTopic);
+  }
+
+  const query = searchQuery.trim().toLowerCase();
+  if (query) {
+    visibleItems = visibleItems.filter((p) =>
+      p.title.toLowerCase().includes(query) ||
+      p.content.toLowerCase().includes(query) ||
+      p.topic.toLowerCase().includes(query) ||
+      p.author.username.toLowerCase().includes(query)
+    );
   }
 
   return (
@@ -48,9 +58,15 @@ export default function HomePage() {
         </div>
       </div>
 
-      <FeedGrid status={status} items={visibleItems} onRetry={() => fetchPosts({ skip: 0, limit: 10 })} />
+      <FeedGrid
+        status={status}
+        items={visibleItems}
+        onRetry={() => fetchPosts({ skip: 0, limit: 10 })}
+        emptyTitle={query ? `No posts match “${searchQuery.trim()}”` : undefined}
+        emptyCta={query ? <></> : undefined}
+      />
 
-      {status === "success" && hasMore && (
+      {status === "success" && hasMore && !query && (
         <div className="mt-8 flex justify-center">
           <Button variant="secondary" onClick={loadMore}>Load more</Button>
         </div>

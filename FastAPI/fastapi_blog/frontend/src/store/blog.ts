@@ -78,6 +78,8 @@ type BlogState = {
   currentPost: Post | null;
   postStatus: ListStatus;
   postError: string | null;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
   fetchPosts: (opts?: { skip?: number; limit?: number; append?: boolean }) => Promise<void>;
   loadMore: () => Promise<void>;
   fetchPost: (id: string) => Promise<void>;
@@ -103,6 +105,8 @@ export const useBlogStore = create<BlogState>((set, get) => ({
   currentPost: null,
   postStatus: 'idle',
   postError: null,
+  searchQuery: '',
+  setSearchQuery: (query) => set({ searchQuery: query }),
 
   fetchPosts: async ({ skip = 0, limit = get().limit, append = false } = {}) => {
     set({ status: 'loading', error: null });
