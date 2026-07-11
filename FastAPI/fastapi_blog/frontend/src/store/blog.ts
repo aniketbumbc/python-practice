@@ -33,6 +33,15 @@ type PaginatedPostResponse = {
 const validImage = (url: string | null | undefined) =>
   url && url !== 'Image not found' ? url : undefined;
 
+async function apiErrorMessage(res: Response, fallback: string) {
+  const body = await res.json().catch(() => null);
+  if (typeof body?.detail === 'string') return body.detail;
+  if (res.status === 422) return 'Please check your details and try again.';
+  return fallback;
+}
+
+type PostInput = { title: string; topic: string; content: string };
+
 const excerptOf = (content: string, len = 160) =>
   content.length > len ? `${content.slice(0, len).trim()}…` : content;
 
@@ -72,6 +81,14 @@ type BlogState = {
   fetchPosts: (opts?: { skip?: number; limit?: number; append?: boolean }) => Promise<void>;
   loadMore: () => Promise<void>;
   fetchPost: (id: string) => Promise<void>;
+  createPost: (input: PostInput, token: string | null) => Promise<{ ok: true; post: Post } | { ok: false; error: string }>;
+  updatePost: (id: string, input: PostInput, token: string | null) => Promise<{ ok: true; post: Post } | { ok: false; error: string }>;
+  uploadThumbnail: (
+    id: string,
+    file: File,
+    token: string | null,
+    onProgress: (pct: number) => void,
+  ) => Promise<{ ok: true; post: Post } | { ok: false; error: string }>;
 };
 
 export const useBlogStore = create<BlogState>((set, get) => ({
@@ -132,5 +149,71 @@ export const useBlogStore = create<BlogState>((set, get) => ({
         postError: err instanceof Error ? err.message : 'Failed to load post',
       });
     }
+  },
+
+  createPost: async (input, token) => {
+    try {
+      const res = await fetch(`${API_BASE}/posts/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) return { ok: false, error: await apiErrorMessage(res, 'Could not publish post') };
+      const data: ApiPost = await res.json();
+      const post = toPost(data);
+      set({ currentPost: post });
+      return { ok: true, post };
+    } catch {
+      return { ok: false, error: 'Could not publish post. Please try again.' };
+    }
+  },
+
+  updatePost: async (id, input, token) => {
+    try {
+      const res = await fetch(`${API_BASE}/posts/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) return { ok: false, error: await apiErrorMessage(res, 'Could not update post') };
+      const data: ApiPost = await res.json();
+      const post = toPost(data);
+      set({ currentPost: post });
+      return { ok: true, post };
+    } catch {
+      return { ok: false, error: 'Could not update post. Please try again.' };
+    }
+  },
+
+  uploadThumbnail: (id, file, token, onProgress) => {
+    return new Promise((resolve) => {
+      const form = new FormData();
+      form.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('PATCH', `${API_BASE}/posts/${id}/thumbnail`);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const data: ApiPost = JSON.parse(xhr.responseText);
+          const post = toPost(data);
+          set({ currentPost: post });
+          resolve({ ok: true, post });
+        } else {
+          const detail = (() => {
+            try { return JSON.parse(xhr.responseText)?.detail; } catch { return null; }
+          })();
+          resolve({ ok: false, error: typeof detail === 'string' ? detail : 'Could not upload image' });
+        }
+      };
+      xhr.onerror = () => resolve({ ok: false, error: 'Could not upload image. Please try again.' });
+
+      xhr.send(form);
+    });
   },
 }));

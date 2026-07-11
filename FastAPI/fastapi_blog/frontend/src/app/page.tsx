@@ -4,18 +4,30 @@ import FeedGrid from "@/components/feed/FeedGrid";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { useBlogStore } from "@/store/blog";
+import { useAuth } from "@/store/auth";
 
-const TOPICS = ["All", "Engineering", "Design", "Product", "AI"];
+const TOPICS = ["Yours", "All", "Engineering", "Design", "Product", "AI"];
 
 export default function HomePage() {
   const { posts, status, hasMore, fetchPosts, loadMore } = useBlogStore();
-  const [topic, setTopic] = useState("All");
+  const {currentUser} = useAuth()
+  const [topic, setTopic] = useState(currentUser ? "Yours" : "All");
+
+  const topics = currentUser ? TOPICS : TOPICS.filter((t) => t !== "Yours");
+  const effectiveTopic = currentUser ? topic : topic === "Yours" ? "All" : topic;
 
   useEffect(() => {
     fetchPosts({ skip: 0, limit: 10 });
   }, [fetchPosts]);
 
-  const visibleItems = topic === "All" ? posts : posts.filter((p) => p.topic === topic);
+  let visibleItems;
+  if (effectiveTopic === "All") {
+    visibleItems = posts;
+  } else if (effectiveTopic === "Yours") {
+    visibleItems = posts.filter((p) => currentUser?.id === p.author.id);
+  } else {
+    visibleItems = posts.filter((p) => p.topic === effectiveTopic);
+  }
 
   return (
     <>
@@ -25,13 +37,13 @@ export default function HomePage() {
           <p className="text-muted mt-1">Fresh writing from the community.</p>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
-          {TOPICS.map((t) => (
+          {topics.map((text) => (
             <button
-              key={t}
-              onClick={() => setTopic(t)}
+              key={text}
+              onClick={() => setTopic(text)}
               className={cn("focus-ring cursor-pointer px-3 py-1.5 rounded-full text-sm border transition-colors",
-                topic === t ? "bg-primary text-ink border-primary" : "bg-surface text-text border-border-strong hover:border-muted")}
-            >{t}</button>
+                effectiveTopic === text ? "bg-primary text-ink border-primary" : "bg-surface text-text border-border-strong hover:border-muted")}
+            >{text}</button>
           ))}
         </div>
       </div>

@@ -6,23 +6,38 @@ import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import Tag from "@/components/ui/Tag";
 import { useToast } from "@/store/toast";
+import { useAuth } from "@/store/auth";
+import { useBlogStore } from "@/store/blog";
 
-type Props = { mode: "create" | "edit"; initial?: { title: string; topic: string; content: string } };
+type Props = { mode: "create" | "edit"; postId?: string; initial?: { title: string; topic: string; content: string } };
 
-export default function PostEditor({ mode, initial }: Props) {
+export default function PostEditor({ mode, postId, initial }: Props) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [topic, setTopic] = useState(initial?.topic ?? "");
   const [content, setContent] = useState(initial?.content ?? "");
+  const [publishing, setPublishing] = useState(false);
   const push = useToast((s) => s.push);
+  const token = useAuth((s) => s.token);
+  const createPost = useBlogStore((s) => s.createPost);
+  const updatePost = useBlogStore((s) => s.updatePost);
   const router = useRouter();
 
   const contentOk = content.length >= 30;
   const canPublish = title && topic.length >= 5 && contentOk;
 
-  const publish = () => {
-    if (!canPublish) return;
+  const publish = async () => {
+    if (!canPublish || publishing) return;
+    setPublishing(true);
+    const input = { title, topic, content };
+    const result = mode === "create" ? await createPost(input, token) : await updatePost(postId!, input, token);
+    setPublishing(false);
+
+    if (!result.ok) {
+      push(result.error, "error");
+      return;
+    }
     push(mode === "create" ? "Published" : "Post updated");
-    router.push("/");
+    router.push(`/posts/${result.post.id}`);
   };
 
   return (
@@ -31,7 +46,9 @@ export default function PostEditor({ mode, initial }: Props) {
         <Button variant="ghost" onClick={() => router.back()}>Cancel</Button>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => push("Draft saved")}>Save draft</Button>
-          <Button onClick={publish} disabled={!canPublish}>{mode === "create" ? "Publish" : "Save changes"}</Button>
+          <Button onClick={publish} disabled={!canPublish || publishing}>
+            {publishing ? "Saving…" : mode === "create" ? "Publish" : "Save changes"}
+          </Button>
         </div>
       </div>
 

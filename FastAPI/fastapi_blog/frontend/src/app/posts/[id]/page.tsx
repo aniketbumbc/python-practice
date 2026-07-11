@@ -1,5 +1,5 @@
 "use client";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tag from "@/components/ui/Tag";
@@ -12,17 +12,34 @@ import { useBlogStore } from "@/store/blog";
 
 export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { isOwner } = useAuth();
+  const { isOwner, token } = useAuth();
   const push = useToast((s) => s.push);
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
-  const { currentPost: post, postStatus, postError, fetchPost } = useBlogStore();
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentPost: post, postStatus, postError, fetchPost, uploadThumbnail } = useBlogStore();
 
   useEffect(() => {
     fetchPost(id);
   }, [id, fetchPost]);
 
   const del = () => { setConfirm(false); push("Post deleted"); router.push("/"); };
+
+  const uploadFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      push("Only image files are supported.", "error");
+      return;
+    }
+    setUploadPct(0);
+    const result = await uploadThumbnail(id, file, token, setUploadPct);
+    setUploadPct(null);
+    if (!result.ok) {
+      push(result.error, "error");
+      return;
+    }
+    push("Thumbnail updated");
+  };
 
   if (postStatus === "loading" || postStatus === "idle") {
     return (
@@ -60,6 +77,20 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
         {isOwner(post.author.id) && (
           <div className="flex gap-2">
             <Link href={`/posts/${id}/edit`}><Button variant="secondary">✎ Edit</Button></Link>
+            <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploadPct !== null}>
+              {uploadPct !== null ? `Uploading… ${uploadPct}%` : "⬆ Upload"}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadFile(file);
+                e.target.value = "";
+              }}
+            />
             <Button variant="danger" onClick={() => setConfirm(true)}>🗑 Delete</Button>
           </div>
         )}

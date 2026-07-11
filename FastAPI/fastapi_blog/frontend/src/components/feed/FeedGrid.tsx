@@ -11,6 +11,7 @@ type Props = {
   onRetry?: () => void;
   emptyTitle?: string;
   emptyCta?: React.ReactNode;
+  topic?:string;
 };
 
 function StateBox({ tone, icon, title, action }: { tone: "tint" | "danger"; icon: string; title: string; action: React.ReactNode }) {
@@ -23,7 +24,8 @@ function StateBox({ tone, icon, title, action }: { tone: "tint" | "danger"; icon
   );
 }
 
-export default function FeedGrid({ status, items, onRetry, emptyTitle = "No posts yet", emptyCta }: Props) {
+export default function FeedGrid({ status, items, onRetry, emptyTitle = "No posts yet", emptyCta, topic  }: Props) {
+  console.log(items,topic)
   if (status === "loading" || status === "idle") return <FeedSkeleton />;
   if (status === "error") return <StateBox tone="danger" icon="!" title="Couldn't load posts" action={<Button variant="secondary" onClick={onRetry}>↻ Retry</Button>} />;
   if (status === "empty" || items.length === 0)
