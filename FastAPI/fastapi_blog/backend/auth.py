@@ -52,6 +52,12 @@ def verify_access_token(token:str) -> str | None:
 
 async def get_current_user(token:Annotated[str,Depends(oauth2_scheme)], db:Annotated[AsyncSession,Depends(get_db)]) -> models.User:
     payload = verify_access_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     userName = payload.get('sub')
     userId = payload.get('id')
     if not userName or not userId:

@@ -83,6 +83,7 @@ type BlogState = {
   fetchPost: (id: string) => Promise<void>;
   createPost: (input: PostInput, token: string | null) => Promise<{ ok: true; post: Post } | { ok: false; error: string }>;
   updatePost: (id: string, input: PostInput, token: string | null) => Promise<{ ok: true; post: Post } | { ok: false; error: string }>;
+  deletePost: (id: string, token: string | null) => Promise<{ ok: true } | { ok: false; error: string }>;
   uploadThumbnail: (
     id: string,
     file: File,
@@ -182,6 +183,23 @@ export const useBlogStore = create<BlogState>((set, get) => ({
       return { ok: true, post };
     } catch {
       return { ok: false, error: 'Could not update post. Please try again.' };
+    }
+  },
+
+  deletePost: async (id, token) => {
+    try {
+      const res = await fetch(`${API_BASE}/posts/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return { ok: false, error: await apiErrorMessage(res, 'Could not delete post') };
+      set((s) => ({
+        posts: s.posts.filter((p) => p.id !== id),
+        currentPost: s.currentPost?.id === id ? null : s.currentPost,
+      }));
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Could not delete post. Please try again.' };
     }
   },
 

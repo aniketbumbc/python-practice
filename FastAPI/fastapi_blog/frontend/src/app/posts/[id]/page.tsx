@@ -16,15 +16,27 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const push = useToast((s) => s.push);
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { currentPost: post, postStatus, postError, fetchPost, uploadThumbnail } = useBlogStore();
+  const { currentPost: post, postStatus, postError, fetchPost, uploadThumbnail, deletePost } = useBlogStore();
 
   useEffect(() => {
     fetchPost(id);
   }, [id, fetchPost]);
 
-  const del = () => { setConfirm(false); push("Post deleted"); router.push("/"); };
+  const del = async () => {
+    setDeleting(true);
+    const result = await deletePost(id, token);
+    setDeleting(false);
+    setConfirm(false);
+    if (!result.ok) {
+      push(result.error, "error");
+      return;
+    }
+    push("Post deleted");
+    router.push("/");
+  };
 
   const uploadFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -77,20 +89,6 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
         {isOwner(post.author.id) && (
           <div className="flex gap-2">
             <Link href={`/posts/${id}/edit`}><Button variant="secondary">✎ Edit</Button></Link>
-            <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploadPct !== null}>
-              {uploadPct !== null ? `Uploading… ${uploadPct}%` : "⬆ Upload"}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) uploadFile(file);
-                e.target.value = "";
-              }}
-            />
             <Button variant="danger" onClick={() => setConfirm(true)}>🗑 Delete</Button>
           </div>
         )}
@@ -108,7 +106,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       <Modal
         open={confirm} onClose={() => setConfirm(false)} icon="🗑"
         title="Delete this post?" description={`"${post.title}" will be permanently removed.`}
-        confirmLabel="Delete post" onConfirm={del}
+        confirmLabel={deleting ? "Deleting…" : "Delete post"} onConfirm={del} confirmDisabled={deleting}
       />
     </article>
   );

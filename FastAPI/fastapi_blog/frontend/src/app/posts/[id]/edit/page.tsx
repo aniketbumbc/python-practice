@@ -32,5 +32,11 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
     );
   }
 
-  return <PostEditor mode="edit" postId={id} initial={{ title: post.title, topic: post.topic, content: post.content }} />;
+  return (
+    <PostEditor
+      mode="edit"
+      postId={id}
+      initial={{ title: post.title, topic: post.topic, content: post.content, coverUrl: post.coverUrl }}
+    />
+  );
 }

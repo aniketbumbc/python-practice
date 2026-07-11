@@ -24,10 +24,10 @@ class UserPrivate(UserPublic):
 
 
 class PostBase(BaseModel):
-    title:str = Field(min_length=1, max_length=100)
+    title:str = Field(min_length=10, max_length=100)
     content:str = Field(min_length=30,example="FastAPI is a modern web framework for building APIs with Python."
 )
-    topic:str =  Field(min_length=5, max_length=50)
+    topic:str =  Field(min_length=1, max_length=20)
 
 
 class PostCreate(PostBase):
