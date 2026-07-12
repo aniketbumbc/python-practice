@@ -4,6 +4,7 @@ import type { Post, ListStatus } from "@/lib/types";
 import FeedCard from "./FeedCard";
 import FeedSkeleton from "./FeedSkeleton";
 import Button from "@/components/ui/Button";
+import { useAuth } from "@/store/auth";
 
 type Props = {
   status: ListStatus;
@@ -25,11 +26,16 @@ function StateBox({ tone, icon, title, action }: { tone: "tint" | "danger"; icon
 }
 
 export default function FeedGrid({ status, items, onRetry, emptyTitle = "No posts yet", emptyCta, topic  }: Props) {
-  console.log(items,topic)
+  const { currentUser } = useAuth();
+
   if (status === "loading" || status === "idle") return <FeedSkeleton />;
   if (status === "error") return <StateBox tone="danger" icon="!" title="Couldn't load posts" action={<Button variant="secondary" onClick={onRetry}>↻ Retry</Button>} />;
   if (status === "empty" || items.length === 0)
-    return <StateBox tone="tint" icon="✎" title={emptyTitle} action={emptyCta ?? <Link href="/posts/new"><Button>Write a post</Button></Link>} />;
+    return currentUser ? (
+      <StateBox tone="tint" icon="✎" title={emptyTitle} action={emptyCta ?? <Link href="/posts/new"><Button>Write a post</Button></Link>} />
+    ) : (
+      <StateBox tone="tint" icon="" title="No posts for this section" action={<Link href="/login"><Button>Log in to write post</Button></Link>} />
+    );
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[22px]">
