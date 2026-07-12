@@ -48,6 +48,8 @@ type AuthState = {
   signIn: (username: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   updateProfile: (input: ProfileInput) => Promise<{ ok: true } | { ok: false; error: string }>;
   changePassword: (input: PasswordInput) => Promise<{ ok: true } | { ok: false; error: string }>;
+  forgotPassword: (email: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  resetPassword: (token: string, new_password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   deleteAccount: () => Promise<{ ok: true } | { ok: false; error: string }>;
   uploadAvatar: (file: File, onProgress: (pct: number) => void) => Promise<{ ok: true } | { ok: false; error: string }>;
   removeAvatar: () => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -148,6 +150,34 @@ export const useAuth = create<AuthState>((set, get) => ({
       return { ok: true };
     } catch {
       return { ok: false, error: 'Could not update password. Please try again.' };
+    }
+  },
+
+  forgotPassword: async (email) => {
+    try {
+      const res = await fetch(`${API_BASE}/users/forgot_password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) return { ok: false, error: await apiErrorMessage(res, 'Could not send reset link') };
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Could not send reset link. Please try again.' };
+    }
+  },
+
+  resetPassword: async (token, new_password) => {
+    try {
+      const res = await fetch(`${API_BASE}/users/rest_password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, new_password }),
+      });
+      if (!res.ok) return { ok: false, error: await apiErrorMessage(res, 'Could not reset password') };
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Could not reset password. Please try again.' };
     }
   },
 
