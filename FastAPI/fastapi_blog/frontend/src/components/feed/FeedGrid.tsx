@@ -16,9 +16,12 @@ type Props = {
 };
 
 function StateBox({ tone, icon, title, action }: { tone: "tint" | "danger"; icon: string; title: string; action: React.ReactNode }) {
+  const { currentUser } = useAuth();
   return (
     <div className="py-20 flex flex-col items-center text-center gap-3">
-      <div className={`w-12 h-12 grid place-items-center rounded-xl text-xl ${tone === "tint" ? "bg-tint text-accent" : "bg-danger-bg text-danger"}`}>{icon}</div>
+      {
+      currentUser && <div className={`w-12 h-12 grid place-items-center rounded-xl text-xl ${tone === "tint" ? "bg-tint text-accent" : "bg-danger-bg text-danger"}`}>{icon}</div>
+      }
       <p className="text-lg font-semibold text-ink">{title}</p>
       {action}
     </div>
@@ -34,7 +37,7 @@ export default function FeedGrid({ status, items, onRetry, emptyTitle = "No post
     return currentUser ? (
       <StateBox tone="tint" icon="✎" title={emptyTitle} action={emptyCta ?? <Link href="/posts/new"><Button>Write a post</Button></Link>} />
     ) : (
-      <StateBox tone="tint" icon="" title="No posts for this section" action={<Link href="/login"><Button>Log in to write post</Button></Link>} />
+      <StateBox  tone="tint" icon="" title="No posts for this section" action={<Link href="/login"><Button>Log in to write post</Button></Link>} />
     );
 
   return (

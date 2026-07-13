@@ -54,6 +54,43 @@ app.include_router(posts.router)
 def home(request: Request):
     return templates.TemplateResponse(request, "home.html")
 
+#Registers the function as HTTP middleware on your FastAPI app. 
+# Every HTTP request passes through this before hitting your route handlers, 
+# And every response passes back through it on the way out.
+
+
+# Register this function as HTTP middleware.
+# Every request flows through here before reaching your route handlers,
+# and every response flows back through on the way out to the client.
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    # Forward the request down the chain (next middleware -> your route handler)
+    # and wait for the response. Everything below mutates that finished response.
+    response = await call_next(request)
+
+    # Anti-clickjacking: page may only be framed by the SAME origin.
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+
+    # Stop browsers from MIME-sniffing the body and guessing a different
+    # Content-Type than the one you declared.
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    # Set a sensible referrer default, but ONLY if a route/other layer
+    # hasn't already set its own. Avoids overriding deliberate intent.
+    if "Referrer-Policy" not in response.headers:
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    # HSTS: force HTTPS for this domain + subdomains for max-age seconds
+    # (63072000 = 2 years). Skipped on localhost/127.0.0.1 because sending
+    # HSTS over local HTTP would pin HTTPS and lock you out of dev.
+    if request.url.hostname not in ("localhost", "127.0.0.1"):
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains"
+        )
+
+    # Return the mutated response so it continues back to the client.
+    # Omitting this is the classic bug — the request hangs.
+    return response
 
 @app.get("/health")
 async def health_check(db: AsyncSession = Depends(get_db)):
