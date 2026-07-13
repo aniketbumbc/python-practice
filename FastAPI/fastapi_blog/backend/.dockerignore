@@ -1,0 +1,28 @@
+.git/
+.gitignore
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Editor/OS
+.vscode/
+.idea/
+.DS_Store
+
+# Docs / notes
+README.md
+notes.txt
+

@@ -41,18 +41,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Static files & templates
-app.mount("/media", StaticFiles(directory="media"), name="media")
-templates = Jinja2Templates(directory="templates")
+
 
 # Routers
 app.include_router(users.router)
 app.include_router(posts.router)
 
-
-@app.get("/", response_class=HTMLResponse, include_in_schema=False)
-def home(request: Request):
-    return templates.TemplateResponse(request, "home.html")
 
 #Registers the function as HTTP middleware on your FastAPI app. 
 # Every HTTP request passes through this before hitting your route handlers, 

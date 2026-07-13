@@ -6,3 +6,13 @@ to generate migration script.
 5. uv run alembic current ( Check current status)
 6. uv run alembic history (Check history)
 7. On production on apply alembic upgrade head
+
+
+
+1. dockerfile tells the docker how to build an image
+2. Image is result of that build
+3. container is a running instance of an image. Image run on cloud or docker desktop.
+
+
+
+1. docker file stage loader that install dependency. builder stage.
