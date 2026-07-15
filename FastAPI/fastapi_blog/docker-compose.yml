@@ -13,7 +13,7 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: https://api.yourdomain.com/api   # was localhost
+        NEXT_PUBLIC_API_URL: https://api.aniketdev.blog/api   # was localhost
     container_name: "nextjs-blog-client"
     expose:
       - "3000"                 # was: ports 3000:3000 — now internal only
