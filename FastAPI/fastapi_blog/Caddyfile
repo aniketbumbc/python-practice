@@ -1,0 +1,7 @@
+aniketdev.blog{
+    reverse_proxy frontend:3000
+}
+
+api.aniketdev.blog{
+    reverse_proxy backend:8080
+}

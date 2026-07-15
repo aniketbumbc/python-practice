@@ -5,18 +5,37 @@ services:
     container_name: "fastapi-server"
     env_file:
       - ./backend/.env
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"                 # was: ports 8080:8080 — now internal only
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080/api}
+        NEXT_PUBLIC_API_URL: https://api.yourdomain.com/api   # was localhost
     container_name: "nextjs-blog-client"
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"                 # was: ports 3000:3000 — now internal only
     depends_on:
       - backend
     restart: unless-stopped
+
+  caddy:                       # new service
+    image: caddy:2
+    container_name: "caddy-proxy"
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # persists your certs — do not skip
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  caddy_data:
+  caddy_config:
